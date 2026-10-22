@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>Product Dashboard</h1>
+            <button id="logoutBtn" class="logout">Logout</button>
+        </header>
+
+        <section class="card">
+            <h2>Add Product</h2>
+
+            <form id="productForm">
+                <input
+                    type="text"
+                    id="productName"
+                    placeholder="Product name"
+                    required
+                >
+
+                <input
+                    type="number"
+                    id="productPrice"
+                    placeholder="Price"
+                    min="0"
+                    step="0.01"
+                    required
+                >
+
+                <input
+                    type="number"
+                    id="productQuantity"
+                    placeholder="Quantity"
+                    min="0"
+                    step="1"
+                    required
+                >
+
+                <button type="submit">Add Product</button>
+            </form>
+
+            <p id="addMessage"></p>
+        </section>
+
+        <section class="card">
+            <h2>View Products</h2>
+            <button id="viewBtn">View / Refresh Products</button>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="productList"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Delete Product by Name</h2>
+
+            <form id="deleteForm">
+                <input
+                    type="text"
+                    id="deleteName"
+                    placeholder="Enter product name"
+                    required
+                >
+
+                <button type="submit" class="delete-btn">
+                    Delete Product
+                </button>
+            </form>
+
+            <p id="deleteMessage"></p>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

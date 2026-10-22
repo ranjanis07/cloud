@@ -1,0 +1,449 @@
+Part 1: Check whether Hadoop is already installed
+Step 1. Open Ubuntu Terminal
+Press Ctrl + Alt + T.
+Check Java:
+java -version
+
+
+Check whether Hadoop is already configured:
+echo $HADOOP_HOME
+
+
+Check whether the Hadoop command works:
+hadoop version
+
+
+Also check your Downloads folder:
+ls ~/Downloads
+
+
+Look for a folder or archive named similar to:
+hadoop-3.4.1
+hadoop-3.4.1.tar.gz
+
+
+What should you do?
+- If hadoop version shows a version, Hadoop is available on your PATH.
+- If a Hadoop folder exists but the command fails, it may only need configuration.
+- If neither exists, continue with the download.
+Part 2: Download and extract Hadoop
+Step 2. Install Java and SSH prerequisites
+Run:
+sudo apt update
+
+
+Then:
+sudo apt install openjdk-11-jdk openssh-server openssh-client -y
+
+
+Check Java:
+java -version
+
+
+If Java 11 is installed, find its installation path:
+readlink -f $(which java)
+
+
+A common Java home on Ubuntu is:
+/usr/lib/jvm/java-11-openjdk-amd64
+
+
+Step 3. Download Hadoop
+Move to Downloads:
+cd ~/Downloads
+
+
+Download Hadoop 3.4.1:
+wget https://archive.apache.org/dist/hadoop/common/hadoop-3.4.1/hadoop-3.4.1.tar.gz
+
+
+Wait for the download to complete.
+Step 4. Extract the downloaded archive
+Run:
+tar -xzf hadoop-3.4.1.tar.gz
+
+
+Check the extracted folder:
+ls ~/Downloads/hadoop-3.4.1
+
+
+You should see directories such as:
+bin
+etc
+include
+lib
+libexec
+sbin
+share
+
+
+If the folder already exists and contains these files, you can skip the download and extraction steps.
+Part 3: Configure Hadoop
+Step 5. Set environment variables
+Open your Bash configuration file:
+nano ~/.bashrc
+
+
+Go to the bottom and add these lines:
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+export HADOOP_HOME=/home/osboxes/Downloads/hadoop-3.4.1
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+
+
+Save the file with Ctrl + O, press Enter, then Ctrl + X.
+Load the settings:
+source ~/.bashrc
+
+
+Configure Java for Hadoop itself:
+nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+
+
+Add or update this line:
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+
+
+Save and exit.
+Check Hadoop:
+hadoop version
+
+
+If your Java installation path differs, use the correct path found in Step 2.
+Step 6. Configure HDFS
+Hadoop uses XML files for its configuration. We will set up a single-node environment.
+Configure core-site.xml:
+nano $HADOOP_HOME/etc/hadoop/core-site.xml
+
+
+Replace its contents with:
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:9000</value>
+    </property>
+</configuration>
+
+
+Save and exit.
+Configure hdfs-site.xml:
+nano $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+
+
+Replace its contents with:
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file:///home/osboxes/hadoopdata/namenode</value>
+    </property>
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file:///home/osboxes/hadoopdata/datanode</value>
+    </property>
+</configuration>
+
+
+Save and exit.
+Step 7. Configure MapReduce and YARN
+Configure mapred-site.xml:
+nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
+
+
+Enter:
+<configuration>
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+</configuration>
+
+
+Save and exit.
+Configure yarn-site.xml:
+nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
+
+
+Enter:
+<configuration>
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+</configuration>
+
+
+Save and exit.
+Step 8. Enable passwordless SSH
+Hadoop's start scripts use SSH to start services. Configure local SSH:
+sudo service ssh start
+
+
+Generate a key if you do not already have one:
+ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
+
+
+If that file already exists, do not overwrite it; use your existing key instead.
+Authorize the key:
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+
+Set the correct permission:
+chmod 600 ~/.ssh/authorized_keys
+
+
+Test SSH:
+ssh localhost
+
+
+If prompted to trust the host, type yes. If the connection succeeds, return to your usual shell:
+exit
+
+
+Step 9. Format the NameNode
+Run this command only for your first initialization of this Hadoop data directory:
+hdfs namenode -format
+
+
+Look for a successful formatting message.
+Warning: formatting an existing NameNode can erase its HDFS metadata. Do not repeat this command on a working cluster with data you want to keep.
+Part 4: Start Hadoop
+Step 10. Start HDFS
+Run:
+start-dfs.sh
+
+
+Check the Java processes:
+jps
+
+
+You should normally see:
+NameNode
+DataNode
+SecondaryNameNode
+Jps
+
+
+Open the NameNode web interface in the Ubuntu browser:
+Hadoop NameNode web interface — http://localhost:9870/If the page loads, HDFS is running.
+Step 11. Start YARN
+Run:
+start-yarn.sh
+
+
+Check again:
+jps
+
+
+You should now normally see ResourceManager and NodeManager as well.
+Open:
+Hadoop ResourceManager web interface — http://localhost:8088/You have now configured the services needed to run MapReduce jobs on YARN. 
+
+hadoop.apache.org
+
+
+
+Part 5: Write the MapReduce Word Count program
+We will write the program in Java. It has three parts:
+- Mapper: Splits lines into words and emits (word, 1).
+- Reducer: Adds the counts for each word.
+- Driver: Configures and starts the MapReduce job.
+Step 12. Create a project folder
+Run these commands in your Ubuntu terminal:
+mkdir -p ~/wordcount/src
+cd ~/wordcount
+
+
+Create the Java file:
+nano src/WordCount.java
+
+
+Step 13. Copy the complete Java program
+
+import java.io.IOException;
+import java.util.StringTokenizer;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class WordCount {
+
+    public static class TokenizerMapper
+            extends Mapper<Object, Text, Text, IntWritable> {
+
+        private final static IntWritable one = new IntWritable(1);
+        private Text word = new Text();
+
+        public void map(Object key, Text value, Context context)
+                throws IOException, InterruptedException {
+
+            StringTokenizer tokenizer =
+                    new StringTokenizer(value.toString());
+
+            while (tokenizer.hasMoreTokens()) {
+                word.set(tokenizer.nextToken());
+                context.write(word, one);
+            }
+        }
+    }
+
+    public static class SumReducer
+            extends Reducer<Text, IntWritable, Text, IntWritable> {
+
+        private IntWritable result = new IntWritable();
+
+        public void reduce(Text key, Iterable<IntWritable> values,
+                           Context context)
+                throws IOException, InterruptedException {
+
+            int sum = 0;
+
+            for (IntWritable value : values) {
+                sum += value.get();
+            }
+
+            result.set(sum);
+            context.write(key, result);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        if (args.length != 2) {
+            System.err.println(
+                "Usage: WordCount <input path> <output path>");
+            System.exit(2);
+        }
+
+        Configuration conf = new Configuration();
+        Job job = Job.getInstance(conf, "Word Count");
+
+        job.setJarByClass(WordCount.class);
+        job.setMapperClass(TokenizerMapper.class);
+        job.setCombinerClass(SumReducer.class);
+        job.setReducerClass(SumReducer.class);
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}
+
+
+
+Save the file using Ctrl + O, Enter, and Ctrl + X.
+Part 6: Compile the Java program and create a JAR
+Step 14. Create a folder for compiled classes
+cd ~/wordcount
+mkdir -p classes
+
+
+Step 15. Compile the program
+Run:
+javac -classpath "$(hadoop classpath)" -d classes src/WordCount.java
+
+
+If compilation succeeds, the terminal normally returns to the prompt without an error.
+If you see package org.apache.hadoop... does not exist, check whether Hadoop is correctly configured and hadoop classpath returns its library paths.
+Step 16. Create the JAR file
+Run:
+jar -cvf wordcount.jar -C classes .
+
+
+Check the files:
+ls
+
+
+You should see:
+classes
+src
+wordcount.jar
+
+
+Your Java program is now packaged and ready to execute.
+Part 7: Create the input file and upload it to HDFS
+Step 17. Create the input text
+Run:
+cd ~/wordcount
+nano input.txt
+
+
+Type:
+hello hadoop
+hello spark
+hadoop is fast
+spark is useful
+hello world
+
+
+Save with Ctrl + O, Enter, and Ctrl + X.
+Verify:
+cat input.txt
+
+
+Step 18. Upload the file to HDFS
+Create an HDFS input directory:
+hdfs dfs -mkdir -p /user/osboxes/input
+
+
+Upload the file:
+hdfs dfs -put ~/wordcount/input.txt /user/osboxes/input/
+
+
+Check the upload:
+hdfs dfs -ls /user/osboxes/input
+
+
+You should see input.txt.
+If HDFS reports that the file already exists, remove the old input file before uploading it again:
+hdfs dfs -rm /user/osboxes/input/input.txt
+
+
+Then repeat the -put command.
+Part 8: Execute the MapReduce program
+Step 19. Run the JAR file
+Execute:
+cd ~/wordcount
+
+
+Then:
+hadoop jar wordcount.jar WordCount /user/osboxes/input /user/osboxes/output
+
+
+Wait for the job to finish. You should see progress messages and, on success, a message similar to:
+map 100% reduce 100%
+
+
+The output directory must not already exist. If you are rerunning the experiment and /user/osboxes/output exists, remove it first:
+hdfs dfs -rm -r /user/osboxes/output
+
+
+Only remove that directory if it contains output from this experiment that you no longer need.
+Part 9: Display the output
+Step 20. View the result in HDFS
+Run:
+hdfs dfs -cat /user/osboxes/output/part-r-00000
+
+
+Expected output:
+fast    1
+hadoop  2
+hello   3
+is      2
+spark   2
+useful  1
+world   1

@@ -1,0 +1,24 @@
+npm init -y
+npm install
+npm install express express-openid-connect dotenv escape-html
+node app.js
+
+In Auth0:
+
+Application Type:
+Regular Web Application
+
+Tech: Express JS
+
+Application URLs:
+http://localhost:3000
+
+Allowed Callback URLs:
+http://localhost:3000/callback
+
+Allowed Logout URLs:
+http://localhost:3000
+
+To see login activity
+For actual login events, go to:
+Monitoring → Logs

@@ -1,0 +1,15 @@
+sudo apt update
+sudo apt install mpich libmpich-dev -y
+mpicc --version
+mpirun --version
+nano mpi_even.c
+mpicc mpi_even.c -o mpi_even
+mpirun -np 4 ./mpi_even
+nano openmp_even.c
+gcc --version
+sudo apt update
+sudo apt install gcc -y
+gcc -fopenmp openmp_even.c -o openmp_even
+./openmp_even
+export OMP_NUM_THREADS=4
+./openmp_even

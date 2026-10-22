@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marketstack Stock Lookup</title>
+</head>
+<body>
+  <h1>Marketstack Stock Lookup</h1>
+
+  <form id="stock-form">
+    <label for="company">Company name:</label>
+    <input id="company" type="text" value="Apple" placeholder="e.g. Apple" required>
+    <button type="submit">Search company</button>
+  </form>
+
+  <p id="message" role="status" aria-live="polite"></p>
+  <section id="result"></section>
+
+  <script>
+    // Replace with your Marketstack access key.
+    const API_KEY = "e9674f9200e56ad9741f002a3493057c";
+
+    const form = document.getElementById("stock-form");
+    const message = document.getElementById("message");
+    const resultElement = document.getElementById("result");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const companyName = document.getElementById("company").value.trim();
+      resultElement.replaceChildren();
+
+      if (!companyName) {
+        message.textContent = "Enter a company name.";
+        return;
+      }
+
+      if (API_KEY === "YOUR_MARKETSTACK_ACCESS_KEY") {
+        message.textContent = "Add your Marketstack access key in the script.";
+        return;
+      }
+
+      message.textContent = "Loading...";
+
+      try {
+        const searchParams = new URLSearchParams({
+          access_key: API_KEY,
+          search: companyName
+        });
+        const searchResponse = await fetch(
+          `https://api.marketstack.com/v1/tickers?${searchParams}`
+        );
+        const searchData = await searchResponse.json();
+
+        if (!searchResponse.ok || searchData.error) {
+          throw new Error(
+            searchData.error?.message ||
+            searchData.error?.info ||
+            "Could not search for that company."
+          );
+        }
+
+        const companies = searchData.data || [];
+        const company = companies.find(
+          (item) => item.name?.toLowerCase() === companyName.toLowerCase()
+        ) || companies[0];
+
+        if (!company?.symbol) {
+          throw new Error(`No company found matching "${companyName}".`);
+        }
+
+        const quoteParams = new URLSearchParams({
+          access_key: API_KEY,
+          symbols: company.symbol
+        });
+        const quoteResponse = await fetch(
+          `https://api.marketstack.com/v1/eod/latest?${quoteParams}`
+        );
+        const quoteData = await quoteResponse.json();
+
+        if (!quoteResponse.ok || quoteData.error) {
+          throw new Error(
+            quoteData.error?.message ||
+            quoteData.error?.info ||
+            "Could not get stock data."
+          );
+        }
+
+        const quote = quoteData.data?.[0];
+        if (!quote) {
+          throw new Error(`No latest end-of-day data found for ${company.name || company.symbol}.`);
+        }
+
+        const heading = document.createElement("h2");
+        heading.textContent = `${company.name || companyName} (${quote.symbol}) stock data`;
+
+        const details = document.createElement("p");
+        details.textContent =
+          `Date: ${quote.date || "N/A"} | ` +
+          `Open: ${quote.open ?? "N/A"} | High: ${quote.high ?? "N/A"} | ` +
+          `Low: ${quote.low ?? "N/A"} | Close: ${quote.close ?? "N/A"} | ` +
+          `Volume: ${quote.volume ?? "N/A"}`;
+
+        resultElement.append(heading, details);
+        message.textContent = "";
+      } catch (error) {
+        message.textContent = error instanceof Error
+          ? error.message
+          : "Could not get stock data.";
+      }
+    });
+  </script>
+</body>
+</html>

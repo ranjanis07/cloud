@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+
+    <style>
+        body { display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 20px; font: 15px Arial, sans-serif; background: #eef2ff; }
+        .container { width: 320px; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 4px 15px #0002; }
+        h2, #result { text-align: center; }
+        label { display: block; margin-top: 15px; }
+        input, button { width: 100%; padding: 11px; margin-top: 7px; box-sizing: border-box; font: inherit; }
+        button { margin-top: 20px; border: 0; border-radius: 6px; background: #4f46e5; color: white; cursor: pointer; }
+        #result { margin-top: 20px; line-height: 1.6; overflow-wrap: anywhere; }
+        .hour { display: flex; justify-content: space-between; }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <h2>Weather App</h2>
+
+        <label for="city">Enter City</label>
+        <input type="text" id="city" placeholder="e.g. Mumbai" autocomplete="off">
+
+        <button id="searchButton" type="button">Get Weather</button>
+
+        <section id="result" aria-live="polite">
+            Weather information will appear here.
+        </section>
+    </main>
+
+    <script>
+        const cityInput = document.getElementById("city");
+        const searchButton = document.getElementById("searchButton");
+        const result = document.getElementById("result");
+
+        async function getWeather() {
+            const city = cityInput.value.trim();
+
+            if (!city) {
+                result.textContent = "Please enter a city name.";
+                cityInput.focus();
+                return;
+            }
+
+            searchButton.disabled = true;
+            result.textContent = "Loading weather...";
+
+            try {
+                const geocodingUrl = new URL("https://geocoding-api.open-meteo.com/v1/search");
+                geocodingUrl.search = new URLSearchParams({
+                    name: city,
+                    count: "1",
+                    language: "en",
+                    format: "json"
+                });
+
+                const locationResponse = await fetch(geocodingUrl);
+
+                if (!locationResponse.ok) {
+                    throw new Error("Unable to find that location.");
+                }
+
+                const locationData = await locationResponse.json();
+                const location = locationData.results && locationData.results[0];
+
+                if (!location) {
+                    throw new Error("No matching city found. Check the spelling and try again.");
+                }
+
+                const weatherUrl = new URL("https://api.open-meteo.com/v1/forecast");
+                weatherUrl.search = new URLSearchParams({
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    hourly: "temperature_2m",
+                    timezone: "auto"
+                });
+
+                const weatherResponse = await fetch(weatherUrl);
+
+                if (!weatherResponse.ok) {
+                    throw new Error("Unable to retrieve weather data.");
+                }
+
+                const weatherData = await weatherResponse.json();
+                const hourly = weatherData.hourly;
+
+                if (!hourly || !Array.isArray(hourly.time) ||
+                    !Array.isArray(hourly.temperature_2m) ||
+                    hourly.time.length === 0 ||
+                    hourly.time.length !== hourly.temperature_2m.length) {
+                    throw new Error("The weather service returned incomplete data.");
+                }
+
+                const place = [location.name, location.admin1, location.country]
+                    .filter(Boolean)
+                    .join(", ");
+
+                result.replaceChildren();
+
+                const locationName = document.createElement("strong");
+                locationName.textContent = place;
+                result.append(locationName);
+
+                const heading = document.createElement("div");
+                heading.className = "hourly-forecast";
+                heading.textContent = `Hourly temperature (${weatherData.hourly_units.temperature_2m})`;
+                result.append(heading);
+
+                for (let index = 0; index < Math.min(6, hourly.time.length); index++) {
+                    const line = document.createElement("div");
+                    line.className = "hour";
+
+                    const time = document.createElement("span");
+                    time.textContent = hourly.time[index].slice(11, 16);
+
+                    const temperature = document.createElement("strong");
+                    temperature.textContent =
+                        `${hourly.temperature_2m[index]}${weatherData.hourly_units.temperature_2m}`;
+
+                    line.append(time, temperature);
+                    result.append(line);
+                }
+            } catch (error) {
+                result.textContent = "Error: " + error.message;
+            } finally {
+                searchButton.disabled = false;
+            }
+        }
+
+        searchButton.addEventListener("click", getWeather);
+        cityInput.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                getWeather();
+            }
+        });
+    </script>
+</body>
+</html>

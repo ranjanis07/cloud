@@ -1,0 +1,12 @@
+cd path\to\auth0-flask-app
+
+python -m venv venv
+
+venv\Scripts\activate
+
+python -m pip install flask python-dotenv auth0-server-python
+
+python app.py
+
+Random key:
+python -c "import secrets; print(secrets.token_hex(32))"

@@ -1,0 +1,11 @@
+node -v
+npm -v
+npm init -y
+npm install express
+node server.js
+
+body-raw-json
+{
+  "name": "Keyboard",
+  "price": 499.99
+}

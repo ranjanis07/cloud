@@ -1,0 +1,95 @@
+
+package cloudsimlab;
+
+import java.util.*;
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.provisioners.*;
+
+public class CloudResourceDemo {
+
+    public static void main(String[] args) throws Exception {
+
+        // Initialize CloudSim
+        CloudSim.init(1, Calendar.getInstance(), false);
+
+        // Create Host
+        List<Pe> peList = new ArrayList<Pe>();
+        peList.add(new Pe(0, new PeProvisionerSimple(1000)));
+
+        List<Host> hosts = new ArrayList<Host>();
+
+        hosts.add(new Host(0,
+            new RamProvisionerSimple(2048),
+            new BwProvisionerSimple(10000),
+            100000, peList,
+            new VmSchedulerTimeShared(peList)));
+
+        // Create Datacenter
+        DatacenterCharacteristics dc = new DatacenterCharacteristics(
+            "x86", "Linux", "Xen", hosts,
+            10.0, 3.0, 0.05, 0.001, 0.0);
+
+        new Datacenter("Datacenter", dc,
+            new VmAllocationPolicySimple(hosts),
+            new LinkedList<Storage>(), 0);
+
+        // Create Broker
+        DatacenterBroker broker = new DatacenterBroker("Broker");
+        int brokerId = broker.getId();
+
+        // Create 2 Virtual Machines
+        List<Vm> vms = new ArrayList<Vm>();
+
+        for (int i = 0; i < 2; i++) {
+            vms.add(new Vm(i, brokerId, 1000, 1,
+                512, 1000, 10000, "Xen",
+                new CloudletSchedulerTimeShared()));
+        }
+
+        broker.submitVmList(vms);
+
+        // Create 4 Tasks (Cloudlets)
+        List<Cloudlet> tasks = new ArrayList<Cloudlet>();
+        UtilizationModel model = new UtilizationModelFull();
+
+        for (int i = 0; i < 4; i++) {
+            Cloudlet task = new Cloudlet(i, 10000, 1,
+                300, 300, model, model, model);
+
+            task.setUserId(brokerId);
+
+            // Resource Allocation: Round Robin
+            task.setVmId(i % 2);
+
+            tasks.add(task);
+        }
+
+        broker.submitCloudletList(tasks);
+
+        // Start Simulation
+        CloudSim.startSimulation();
+
+        List<Cloudlet> result = broker.getCloudletReceivedList();
+
+        CloudSim.stopSimulation();
+
+        // Display Output
+        System.out.println("Task ID\tStatus\tVM ID");
+
+        for (Cloudlet task : result) {
+            System.out.println(task.getCloudletId() + "\t" +
+                (task.getStatus() == Cloudlet.SUCCESS
+                    ? "SUCCESS" : "FAILED") + "\t" +
+                task.getVmId());
+        }
+
+        System.out.println("Simulation Completed!");
+    }
+}
+/////
+cloudsim 3.0.3 (cloudsim 3.0.3)
+commons-math3-3.6.1
+eclipse-java-2026-09-R-win32-x86_64
+cloudanalyst
+apchenetbeeans 21

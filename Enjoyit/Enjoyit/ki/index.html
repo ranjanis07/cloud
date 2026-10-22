@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Student Management</title>
+</head>
+<body>
+    <h2>Student Management</h2>
+
+    <input type="text" id="name" placeholder="Enter student name">
+    <button id="addBtn">Add Student</button>
+
+    <p id="status" role="status" aria-live="polite"></p>
+
+    <h3>Student List</h3>
+    <ul id="studentList"></ul>
+
+    <script>
+        const storageKey = "students";
+        const nameInput = document.getElementById("name");
+        const addButton = document.getElementById("addBtn");
+        const studentList = document.getElementById("studentList");
+        const status = document.getElementById("status");
+
+        function getStudents() {
+            const savedStudents = localStorage.getItem(storageKey);
+            if (savedStudents === null) {
+                return [];
+            }
+
+            const students = JSON.parse(savedStudents);
+            if (!Array.isArray(students) || students.some((student) => typeof student !== "string")) {
+                throw new Error("Saved student data is invalid.");
+            }
+
+            return students;
+        }
+
+        function renderStudents() {
+            try {
+                const students = getStudents();
+                studentList.replaceChildren();
+
+                students.forEach((name) => {
+                    const item = document.createElement("li");
+                    item.textContent = name;
+                    studentList.appendChild(item);
+                });
+
+                status.textContent = "";
+            } catch (error) {
+                status.textContent = `Unable to load students: ${error.message}`;
+            }
+        }
+
+        addButton.addEventListener("click", () => {
+            const name = nameInput.value.trim();
+            if (name === "") {
+                status.textContent = "Enter a student name.";
+                return;
+            }
+
+            try {
+                const students = getStudents();
+                students.push(name);
+                localStorage.setItem(storageKey, JSON.stringify(students));
+                nameInput.value = "";
+                renderStudents();
+                status.textContent = "Student added successfully.";
+            } catch (error) {
+                status.textContent = `Unable to save student: ${error.message}`;
+            }
+        });
+
+        renderStudents();
+    </script>
+</body>
+</html>

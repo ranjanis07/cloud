@@ -1,0 +1,87 @@
+java -version
+
+sudo apt update
+sudo apt install openjdk-11-jdk
+java -version
+sudo apt update
+sudo apt install default-jdk -y
+
+sudo apt-get install scala
+
+scala -version
+
+cd ~/Downloads
+
+wget https://archive.apache.org/dist/spark/spark-2.4.8/spark-2.4.8-bin-hadoop2.7.tgz
+
+ls
+
+tar -xvf spark-2.4.8-bin-hadoop2.7.tgz
+
+ls
+
+sudo mv spark-2.4.8-bin-hadoop2.7 /usr/local/spark
+
+ls /usr/local/spark
+
+nano ~/.bashrc
+
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+export HADOOP_HOME=$HOME/hadoop
+export HADOOP_INSTALL=$HADOOP_HOME
+export HADOOP_MAPPED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export HADOOP_YARN_HOME=$HADOOP_HOME
+export HADOOP_COMMON_LIB_NATIVE=$HADOOP_HOME/lib/native
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
+export SPARK_HOME=/usr/local/spark
+export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
+
+Ctrl+O
+Enter
+Ctrl+X
+
+source ~/.bashrc
+
+spark-shell
+
+:quit
+
+mkdir ~/spark-wordcount
+
+cd ~/spark-wordcount
+
+pwd
+
+nano input.txt
+
+Hello Spark
+Hello Hadoop
+Spark is fast
+Hadoop and Spark
+
+Ctrl+O
+Enter
+Ctrl+X
+
+cat input.txt
+
+spark-shell
+
+val input=sc.textFile("file:///home/tce/spark-wordcount/input.txt")
+
+val counts=input.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey(_ + _)
+
+counts.collect()
+
+counts.saveAsTextFile("output")
+
+:quit
+
+cd ~/spark-wordcount/output
+
+ls
+
+cat part-00000

@@ -1,0 +1,164 @@
+Part 1: Check whether Spark is already downloaded
+Step 1: Open the Ubuntu terminal
+Run:
+cd ~/Downloads
+
+List the files:
+ls
+
+Look for these two names:
+- spark-3.5.6-bin-hadoop3.tgz — the downloaded archive.
+- spark-3.5.6-bin-hadoop3 — the extracted folder.
+Step 2: Check the Spark folder
+Run:
+ls ~/Downloads/spark-3.5.6-bin-hadoop3
+
+If the folder exists, you should see items such as:
+bin
+conf
+data
+examples
+jars
+LICENSE
+licenses
+NOTICE
+README.md
+sbin
+
+If you see the bin and jars folders, Spark is likely extracted.
+Step 3: Check whether the archive exists
+Run:
+ls -lh ~/Downloads/spark-3.5.6-bin-hadoop3.tgz
+
+If the file exists, its size will be displayed.
+If you get No such file or directory, the archive might have been deleted after extraction. You do not need to download it again if the extracted folder is complete.
+Part 2: Download Spark if it is not available
+Skip this part if Spark is already downloaded and extracted.
+Step 4: Download Apache Spark
+Run:
+cd ~/Downloads
+
+Then execute:
+wget https://archive.apache.org/dist/spark/spark-3.5.6/spark-3.5.6-bin-hadoop3.tgz
+
+Wait for the download to finish.
+Step 5: Extract Spark
+Run:
+tar -xvzf spark-3.5.6-bin-hadoop3.tgz
+
+This creates the folder:
+spark-3.5.6-bin-hadoop3
+
+Verify it:
+ls ~/Downloads/spark-3.5.6-bin-hadoop3
+
+Part 3: Configure Spark
+Step 6: Set the Spark path
+Run these commands one at a time:
+export SPARK_HOME=/home/osboxes/Downloads/spark-3.5.6-bin-hadoop3
+
+export PATH=$SPARK_HOME/bin:$PATH
+
+Check the path:
+echo $SPARK_HOME
+
+Expected output:
+/home/osboxes/Downloads/spark-3.5.6-bin-hadoop3
+
+Step 7: Check Java
+Run:
+java -version
+
+If Java version information appears, continue.
+If Java is missing, install Java 11:
+sudo apt update
+sudo apt install openjdk-11-jdk -y
+
+Step 8: Check Spark
+Run:
+ls -l $SPARK_HOME/bin/spark-submit
+
+Then:
+$SPARK_HOME/bin/spark-shell --version
+
+If the version is displayed, continue to the next part.
+If spark-submit is missing, stop here and check whether the Spark folder is complete.
+Part 4: Open Scala
+Step 9: Start the Spark Scala shell
+Execute:
+$SPARK_HOME/bin/spark-shell
+
+Wait for Spark to start.
+You should see a prompt similar to:
+scala>
+
+You are now inside the Scala shell.
+Important: Type the following Scala commands only after the scala> prompt appears.
+Part 5: Create the Word Count input file
+Step 10: Open a second terminal
+Keep the first terminal running Spark.
+Open another Ubuntu terminal using Ctrl + Alt + T.
+Create a folder:
+mkdir -p ~/spark-wordcount
+
+Create an input file:
+nano ~/spark-wordcount/input.txt
+
+Enter this text:
+hello spark
+hello hadoop
+spark is fast
+hadoop is useful
+
+Save the file:
+1. Press Ctrl + O.
+2. Press Enter.
+3. Press Ctrl + X.
+Step 11: Verify the input file
+Run:
+cat ~/spark-wordcount/input.txt
+
+Expected output:
+hello spark
+hello hadoop
+spark is fast
+hadoop is useful
+
+Your input file is ready.
+Part 6: Execute the Word Count program using Scala
+Return to the first terminal, where you see scala>.
+Enter each command separately.
+Step 12: Read the input file
+val text = sc.textFile("file:///home/osboxes/spark-wordcount/input.txt")
+
+Step 13: Split each line into words
+val words = text.flatMap(line => line.split("\\s+"))
+
+Step 14: Assign the value 1 to each word
+val pairs = words.map(word => (word, 1))
+
+Step 15: Count each word
+val counts = pairs.reduceByKey((a, b) => a + b)
+
+Step 16: Display the results
+counts.collect().foreach(println)
+
+Expected output
+(hello,2)
+(spark,2)
+(hadoop,2)
+(is,2)
+(fast,1)
+(useful,1)
+
+The order may differ.
+Result: You have successfully executed the Word Count program using Apache Spark and Scala.
+Part 7: Save the Word Count output
+If you also want to save the output to a file, enter this command in Scala:
+counts.saveAsTextFile("file:///home/osboxes/spark-wordcount/output")
+
+Return to the second Ubuntu terminal and run:
+cat ~/spark-wordcount/output/part-*
+
+
+find the spark path:   find ~ -type d -name "spark-*-bin-hadoop*" 2>/dev/null

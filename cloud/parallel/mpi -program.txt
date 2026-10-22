@@ -1,0 +1,74 @@
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc, char* argv[])
+{
+    int rank, size;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    int arr[100];
+    int chunk = 100 / size;
+    int local_arr[chunk];
+    int local_even[chunk];
+    int j = 0;
+
+    if (rank == 0)
+    {
+        for (int i = 0; i < 100; i++)
+            arr[i] = i + 1;
+    }
+
+    MPI_Scatter(arr, chunk, MPI_INT,
+                local_arr, chunk, MPI_INT,
+                0, MPI_COMM_WORLD);
+
+    for (int i = 0; i < chunk; i++)
+    {
+        if (local_arr[i] % 2 == 0)
+            local_even[j++] = local_arr[i];
+    }
+
+    int counts[size];
+
+    MPI_Gather(&j, 1, MPI_INT,
+               counts, 1, MPI_INT,
+               0, MPI_COMM_WORLD);
+
+    int recv_even[100];
+
+    if (rank == 0)
+    {
+        int displacements[size];
+        displacements[0] = 0;
+
+        for (int i = 1; i < size; i++)
+        {
+            displacements[i] =
+                displacements[i - 1] + counts[i - 1];
+        }
+
+        MPI_Gatherv(local_even, j, MPI_INT,
+                    recv_even, counts, displacements,
+                    MPI_INT, 0, MPI_COMM_WORLD);
+
+        printf("Even numbers:\n");
+
+        for (int i = 0; i < 50; i++)
+            printf("%d ", recv_even[i]);
+
+        printf("\n");
+    }
+    else
+    {
+        MPI_Gatherv(local_even, j, MPI_INT,
+                    NULL, NULL, NULL,
+                    MPI_INT, 0, MPI_COMM_WORLD);
+    }
+
+    MPI_Finalize();
+
+    return 0;
+}

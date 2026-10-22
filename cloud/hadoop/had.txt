@@ -1,0 +1,47 @@
+Step 1: Create a Java file
+mkdir -p ~/wordcount
+cd ~/wordcount
+nano WordCount.java
+
+
+Paste this simple code:
+import java.io.*;
+import java.util.*;
+
+public class WordCount {
+    public static void main(String[] args) throws Exception {
+        Scanner sc = new Scanner(new File("input.txt"));
+        Map<String, Integer> map = new TreeMap<>();
+
+        while (sc.hasNext()) {
+            String word = sc.next();
+            map.put(word, map.getOrDefault(word, 0) + 1);
+        }
+
+        for (String word : map.keySet()) {
+            System.out.println(word + " " + map.get(word));
+        }
+        sc.close();
+    }
+}
+
+
+Save: press Ctrl+O, Enter, then Ctrl+X.
+Step 2: Create the input file
+nano input.txt
+
+
+Type:
+hello hadoop hello world
+
+
+Save and exit using Ctrl+O, Enter, Ctrl+X.
+Step 3: Compile and execute
+javac WordCount.java
+java WordCount
+
+
+Expected output:
+hadoop 1
+hello 2
+world 1
